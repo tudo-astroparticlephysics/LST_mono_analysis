@@ -1,0 +1,9 @@
+# random seed
+seed: 0
+
+# this should be a list of column_name: [operator, value]
+# all cuts are combined with logical AND
+selection:
+  - intensity: [">", 300]  #lst aktuell: > 50
+  - leakage1_intensity: ["<", 0.2]   #lst aktuell: < 0.2
+  - leakage2_intensity: ["<", 0.2]   #lst aktuell: < 0.2
