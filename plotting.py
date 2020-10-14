@@ -8,22 +8,7 @@ import astropy.units as u
 from fact.analysis.statistics import li_ma_significance
 from ctapipe.coordinates import CameraFrame, TelescopeFrame
 
-def calc_dist(x, y):
-    dist = x**2 + y**2
-    return dist
-
-
-def total_t(df):
-    delta = np.diff(df.dragon_time.sort_values())
-    delta = delta[np.abs(delta) < 10]
-    return len(df) * delta.mean()
-
-
-def theta2(df, cut, threshold, n_offs, source, ax=None, window=[0,1]):
-
-    ax = ax or plt.gca()
-
-    src = SkyCoord.from_name(source)
+def to_camera_frame(df, source):
     altaz = AltAz(
         location = EarthLocation.of_site('Roque de los Muchachos'),
         obstime = Time(df.dragon_time, format='unix')
@@ -39,8 +24,34 @@ def theta2(df, cut, threshold, n_offs, source, ax=None, window=[0,1]):
         location = EarthLocation.of_site('Roque de los Muchachos'),
         obstime = Time(df.dragon_time, format='unix')
     )
-    src_cf = src.transform_to(camera_frame)
+    source_cf = source.transform_to(camera_frame)
+    return source_cf
 
+
+def calc_dist(x, y):
+    dist = x**2 + y**2
+    return dist
+
+
+def calc_theta2(dist, focal_length):
+    theta2 = np.rad2deg(
+        np.sqrt(dist) / focal_length
+    )**2
+    return theta2
+
+
+def total_t(df):
+    delta = np.diff(df.dragon_time.sort_values())
+    delta = delta[np.abs(delta) < 10]
+    return len(df) * delta.mean()
+
+
+def theta2(df, cut, threshold, n_offs, source, ax=None, window=[0,1]):
+
+    ax = ax or plt.gca()
+
+    src = SkyCoord.from_name(source)
+    src_cf = to_camera_frame(df, src)
 
     dist_on = calc_dist(
         df.source_x_prediction - src_cf.x.to_value(u.m), 
@@ -60,11 +71,11 @@ def theta2(df, cut, threshold, n_offs, source, ax=None, window=[0,1]):
             )
         )
 
-
-    theta2_on = np.rad2deg(np.sqrt(dist_on) / df.focal_length)**2
-    theta2_off = np.rad2deg(np.sqrt(dist_off) / df.focal_length)**2
+    theta2_on = calc_theta2(dist_on, df.focal_length)
+    theta2_off = calc_theta2(dist_off, df.focal_length)
     scaling = 1 / n_offs
     
+
     ax.hist(theta2_off, bins=100, range=window, histtype='stepfilled', color='tab:blue', alpha=0.5, label='OFF', weights=np.full_like(theta2_off, scaling))
     ax.hist(theta2_on, bins=100, range=window, histtype='step', color='r', label='ON')
 

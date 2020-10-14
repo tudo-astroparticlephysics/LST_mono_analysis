@@ -22,23 +22,18 @@ columns = [
 ]
 
 @click.command()
-@click.argument('outdir', type=click.Path(exists=True, dir_okay=True))
 @click.argument('output', type=click.Path(exists=False, dir_okay=False))
-def main(outdir, output):
-    runs = [
-        f'{outdir}/dl2_v0.5.1_LST-1.Run02113.h5',
-        f'{outdir}/dl2_v0.5.1_LST-1.Run02114.h5',
-        f'{outdir}/dl2_v0.5.1_LST-1.Run02115.h5',
-        f'{outdir}/dl2_v0.5.1_LST-1.Run02116.h5',
-        f'{outdir}/dl2_v0.5.1_LST-1.Run02117.h5',
-        f'{outdir}/dl2_v0.5.1_LST-1.Run02130.h5',
-        f'{outdir}/dl2_v0.5.1_LST-1.Run02131.h5',
-        f'{outdir}/dl2_v0.5.1_LST-1.Run02132.h5',
-        f'{outdir}/dl2_v0.5.1_LST-1.Run02133.h5'
-    ]
+@click.option(
+    '--data', '-d', multiple=True, type=click.Path(exists=True, dir_okay=True),
+    help='DL2 data to be analysed'
+    )
+def main(output, data):
+    
+    if not data:
+        exit('No data given!')
 
     df = pd.DataFrame()
-    for i, run in enumerate(runs):
+    for i, run in enumerate(data):
         df = pd.concat( [
                 df,
                 read_h5py(run, key = 'events', columns=columns)
