@@ -46,38 +46,12 @@ def total_t(df):
     return len(df) * delta.mean()
 
 
-def theta2(df, cut, threshold, n_offs, source, ax=None, window=[0,1]):
+def theta2(theta2_on, theta2_off, scaling, cut, threshold, source, total_time=None, ax=None, window=[0,1]):
 
     ax = ax or plt.gca()
 
-    src = SkyCoord.from_name(source)
-    src_cf = to_camera_frame(df, src)
-
-    dist_on = calc_dist(
-        df.source_x_prediction - src_cf.x.to_value(u.m), 
-        df.source_y_prediction - src_cf.y.to_value(u.m)
-    )
-
-    dist_off = pd.Series()
-    r = np.sqrt(src_cf.x.to_value(u.m)**2 + src_cf.y.to_value(u.m)**2)
-    phi = np.arctan2(src_cf.y.to_value(u.m), src_cf.x.to_value(u.m))
-    for i in range(1, n_offs + 1):
-        x_off = r * np.cos(phi + i * 2 * np.pi / (n_offs + 1)) 
-        y_off = r * np.sin(phi + i * 2 * np.pi / (n_offs + 1))
-        dist_off = dist_off.append(
-            calc_dist(
-                df.source_x_prediction - x_off,
-                df.source_y_prediction - y_off
-            )
-        )
-
-    theta2_on = calc_theta2(dist_on, df.focal_length)
-    theta2_off = calc_theta2(dist_off, df.focal_length)
-    scaling = 1 / n_offs
-    
-
-    ax.hist(theta2_off, bins=100, range=window, histtype='stepfilled', color='tab:blue', alpha=0.5, label='OFF', weights=np.full_like(theta2_off, scaling))
     ax.hist(theta2_on, bins=100, range=window, histtype='step', color='r', label='ON')
+    ax.hist(theta2_off, bins=100, range=window, histtype='stepfilled', color='tab:blue', alpha=0.5, label='OFF', weights=np.full_like(theta2_off, scaling))
 
     n_off = np.count_nonzero(theta2_off < cut)
     n_on = np.count_nonzero(theta2_on < cut)
@@ -85,7 +59,6 @@ def theta2(df, cut, threshold, n_offs, source, ax=None, window=[0,1]):
     n_exc_mean = n_on - scaling * n_off
     n_exc_std = np.sqrt(n_on + scaling**2 * n_off)
 
-    total_time = total_t(df) / 3600
     text_pos = 0.9 * theta2_on[theta2_on < 0.01].size 
     text = (
         rf'Source: {source}, $t_\mathrm{{obs}} = {total_time:.2f}$' + '\n'

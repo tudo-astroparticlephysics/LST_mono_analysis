@@ -28,7 +28,7 @@ all: $(OUTDIR)/cv_separation.h5 \
 	$(OUTDIR)/dl2_$(GAMMA_FILE)_testing.h5 \
 	$(OUTDIR)/dl2_$(GAMMA_DIFFUSE_FILE)_testing.h5 \
 	$(OUTDIR)/dl2_$(PROTON_FILE)_testing.h5 \
-	$(OUTDIR)/mrk421_plot.pdf \
+	$(OUTDIR)/mrk421_theta2.pdf \
 	
 
 #file convert
@@ -118,13 +118,16 @@ $(OUTDIR)/disp_plots.pdf: $(AICT_CONFIG) $(OUTDIR)/cv_disp.h5 $(OUTDIR)/dl1_$(GA
 		-o $@
 
 #observations
-$(OUTDIR)/mrk421_plot.pdf: mrk421.py plotting.py $(OUTDIR)/dl2_v0.5.1_LST-1.Run02113.h5 \
+$(OUTDIR)/mrk421_theta2.pdf: theta2_wobble.py plotting.py $(OUTDIR)/dl2_v0.5.1_LST-1.Run02113.h5 \
   $(OUTDIR)/dl2_v0.5.1_LST-1.Run02114.h5 $(OUTDIR)/dl2_v0.5.1_LST-1.Run02115.h5 \
   $(OUTDIR)/dl2_v0.5.1_LST-1.Run02116.h5 $(OUTDIR)/dl2_v0.5.1_LST-1.Run02117.h5 \
   $(OUTDIR)/dl2_v0.5.1_LST-1.Run02130.h5 $(OUTDIR)/dl2_v0.5.1_LST-1.Run02131.h5 \
   $(OUTDIR)/dl2_v0.5.1_LST-1.Run02132.h5 $(OUTDIR)/dl2_v0.5.1_LST-1.Run02133.h5 | $(OUTDIR)
-	python mrk421.py \
-		$(OUTDIR)/mrk421_plot.pdf \
+	python theta2_wobble.py \
+		$(OUTDIR)/mrk421_theta2.pdf \
+		'Mrk 421' \
+		0.04 \
+		0.6 \
 		-d $(OUTDIR)/dl2_v0.5.1_LST-1.Run02113.h5 \
 		-d $(OUTDIR)/dl2_v0.5.1_LST-1.Run02114.h5 \
 		-d $(OUTDIR)/dl2_v0.5.1_LST-1.Run02115.h5 \
