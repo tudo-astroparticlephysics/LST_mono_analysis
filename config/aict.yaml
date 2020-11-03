@@ -41,10 +41,10 @@ separator:
     - kurtosis
     - n_islands
     - n_pixels
-    - leakage1_intensity
-    - leakage1_pixel
-    - leakage2_intensity
-    - leakage2_pixel
+    - leakage_intensity_width_1
+    - leakage_pixels_width_1
+    - leakage_intensity_width_2
+    - leakage_pixels_width_2
     - concentration_cog
     - concentration_core
     - concentration_pixel
@@ -108,10 +108,10 @@ disp:
     - width
     - length
     - n_pixels
-    - leakage1_intensity
-    - leakage1_pixel
-    - leakage2_intensity
-    - leakage2_pixel
+    - leakage_intensity_width_1
+    - leakage_pixels_width_1
+    - leakage_intensity_width_2
+    - leakage_pixels_width_2
     - r
     - kurtosis
     - skewness
@@ -158,10 +158,10 @@ energy:
     - n_islands
     - n_pixels
     - skewness
-    - leakage1_intensity
-    - leakage1_pixel
-    - leakage2_intensity
-    - leakage2_pixel
+    - leakage_intensity_width_1
+    - leakage_pixels_width_1
+    - leakage_intensity_width_2
+    - leakage_pixels_width_2
     - concentration_cog
     - concentration_core
     - concentration_pixel

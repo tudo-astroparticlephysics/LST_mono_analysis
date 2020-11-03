@@ -61,7 +61,7 @@ def theta2(theta2_on, theta2_off, scaling, cut, threshold, source, total_time=No
 
     text_pos = 0.9 * theta2_on[theta2_on < 0.01].size 
     text = (
-        rf'Source: {source}, $t_\mathrm{{obs}} = {total_time:.2f}$' + '\n'
+        rf'Source: {source}, $t_\mathrm{{obs}} = {total_time:.2f} \mathrm{{h}}$' + '\n'
         + rf'$N_\mathrm{{on}} = {n_on},\, N_\mathrm{{off}} = {n_off},\, \alpha = {scaling:.2f}$' + '\n' 
         + rf'$N_\mathrm{{exc}} = {n_exc_mean:.0f} \pm {n_exc_std:.0f},\, S_\mathrm{{Li&Ma}} = {li_ma:.2f}$'
     )

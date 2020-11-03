@@ -1,9 +1,9 @@
 OUTDIR = build
 INDIR = data
 
-GAMMA_FILE = gamma_south_pointing_20200706_v0.5.2_local_DL1
-GAMMA_DIFFUSE_FILE = gamma-diffuse_south_pointing_20200706_v0.5.2_local_DL1
-PROTON_FILE = proton_south_pointing_20200706_v0.5.2_local_DL1
+GAMMA_FILE = gamma_south_pointing_20201017_v0.6.3_prod3_local_DL1
+GAMMA_DIFFUSE_FILE = gamma-diffuse_south_pointing_20201017_v0.6.3_prod3_local_DL1
+PROTON_FILE = proton_south_pointing_20201017_v0.6.3_prod3_local_DL1
 
 AICT_CONFIG = config/aict.yaml
 CUTS_CONFIG = config/quality_cuts.yaml
@@ -16,7 +16,17 @@ all: $(OUTDIR)/cv_separation.h5 \
 	$(OUTDIR)/regressor_plots.pdf \
 	$(OUTDIR)/disp_plots.pdf \
 	$(OUTDIR)/separator_plots.pdf \
-	$(OUTDIR)/dl2_v0.5.1_LST-1.Run02113.h5 \
+	$(OUTDIR)/dl2_$(GAMMA_FILE)_testing.h5 \
+	$(OUTDIR)/dl2_$(GAMMA_DIFFUSE_FILE)_testing.h5 \
+	$(OUTDIR)/dl2_$(PROTON_FILE)_testing.h5 \
+	$(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02606.h5 \
+	$(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02607.h5 \
+	$(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02608.h5 \
+	$(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02610.h5 \
+	$(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02612.h5 \
+	$(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02613.h5 \
+	$(OUTDIR)/mrk501_theta2.pdf \
+#	$(OUTDIR)/dl2_v0.5.1_LST-1.Run02113.h5 \
 	$(OUTDIR)/dl2_v0.5.1_LST-1.Run02114.h5 \
 	$(OUTDIR)/dl2_v0.5.1_LST-1.Run02115.h5 \
 	$(OUTDIR)/dl2_v0.5.1_LST-1.Run02116.h5 \
@@ -25,9 +35,6 @@ all: $(OUTDIR)/cv_separation.h5 \
 	$(OUTDIR)/dl2_v0.5.1_LST-1.Run02131.h5 \
 	$(OUTDIR)/dl2_v0.5.1_LST-1.Run02132.h5 \
 	$(OUTDIR)/dl2_v0.5.1_LST-1.Run02133.h5 \
-	$(OUTDIR)/dl2_$(GAMMA_FILE)_testing.h5 \
-	$(OUTDIR)/dl2_$(GAMMA_DIFFUSE_FILE)_testing.h5 \
-	$(OUTDIR)/dl2_$(PROTON_FILE)_testing.h5 \
 	$(OUTDIR)/mrk421_theta2.pdf \
 	
 
@@ -137,6 +144,22 @@ $(OUTDIR)/mrk421_theta2.pdf: theta2_wobble.py plotting.py $(OUTDIR)/dl2_v0.5.1_L
 		-d $(OUTDIR)/dl2_v0.5.1_LST-1.Run02131.h5 \
 		-d $(OUTDIR)/dl2_v0.5.1_LST-1.Run02132.h5 \
 		-d $(OUTDIR)/dl2_v0.5.1_LST-1.Run02133.h5
+
+$(OUTDIR)/mrk501_theta2.pdf: theta2_wobble.py plotting.py $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02606.h5 \
+  $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02607.h5 $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02608.h5 \
+  $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02610.h5 $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02612.h5 \
+  $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02613.h5 | $(OUTDIR)
+	python theta2_wobble.py \
+		$(OUTDIR)/mrk501_theta2.pdf \
+		'Mrk 501' \
+		0.04 \
+		0.6 \
+		-d $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02606.h5 \
+		-d $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02607.h5 \
+		-d $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02608.h5 \
+		-d $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02610.h5 \
+		-d $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02612.h5 \
+		-d $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02613.h5
 
 
 $(OUTDIR):
