@@ -8,6 +8,12 @@ import astropy.units as u
 from fact.analysis.statistics import li_ma_significance
 from ctapipe.coordinates import CameraFrame, TelescopeFrame
 
+from astropy.coordinates.erfa_astrom import erfa_astrom, ErfaAstromInterpolator
+
+
+erfa_astrom.set(ErfaAstromInterpolator(10 * u.min))
+
+
 def to_camera_frame(df, source):
     altaz = AltAz(
         location = EarthLocation.of_site('Roque de los Muchachos'),

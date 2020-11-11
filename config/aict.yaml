@@ -19,8 +19,8 @@ separator:
     )
 
   # randomly sample the data if you dont want to use the whole set
-  n_background: 50000
-  n_signal: 50000
+  n_background: 43000
+  n_signal: 43000
 
   # Define the name of the output column for the positive class.
   # default is gamma_prediction
@@ -39,8 +39,6 @@ separator:
     - width
     - skewness
     - kurtosis
-    - n_islands
-    - n_pixels
     - leakage_intensity_width_1
     - leakage_pixels_width_1
     - leakage_intensity_width_2
@@ -100,14 +98,13 @@ disp:
   #array_event_column: array_event_id
 
   # randomly sample the data if you dont want to use the whole set
-  n_signal : 50000
+  n_signal : 43000
 
   features:
     - intensity
     - log_intensity
     - width
     - length
-    - n_pixels
     - leakage_intensity_width_1
     - leakage_pixels_width_1
     - leakage_intensity_width_2
@@ -140,7 +137,7 @@ energy:
     )
 
   # randomly sample the data if you dont want to use the whole set
-  n_signal: 50000
+  n_signal: 43000
 
   # define the name of the regression target
   target_column: mc_energy
@@ -155,8 +152,6 @@ energy:
     - log_intensity
     - length
     - width
-    - n_islands
-    - n_pixels
     - skewness
     - leakage_intensity_width_1
     - leakage_pixels_width_1
