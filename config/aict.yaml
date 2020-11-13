@@ -39,6 +39,8 @@ separator:
     - width
     - skewness
     - kurtosis
+    - n_islands
+    - n_pixels
     - leakage1_intensity
     - leakage1_pixel
     - leakage2_intensity
@@ -109,6 +111,7 @@ disp:
     - log_intensity
     - width
     - length
+    - n_pixels
     - leakage1_intensity
     - leakage1_pixel
     - leakage2_intensity
@@ -160,6 +163,8 @@ energy:
     - log_intensity
     - length
     - width
+    - n_islands
+    - n_pixels
     - skewness
     - leakage1_intensity
     - leakage1_pixel
