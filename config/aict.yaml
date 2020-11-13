@@ -19,8 +19,8 @@ separator:
     )
 
   # randomly sample the data if you dont want to use the whole set
-  n_background: 43000
-  n_signal: 43000
+  n_background: 50000
+  n_signal: 50000
 
   # Define the name of the output column for the positive class.
   # default is gamma_prediction
@@ -39,10 +39,14 @@ separator:
     - width
     - skewness
     - kurtosis
-    - leakage_intensity_width_1
-    - leakage_pixels_width_1
-    - leakage_intensity_width_2
-    - leakage_pixels_width_2
+    - leakage1_intensity
+    - leakage1_pixel
+    - leakage2_intensity
+    - leakage2_pixel
+    #- leakage_intensity_width_1
+    #- leakage_pixels_width_1
+    #- leakage_intensity_width_2
+    #- leakage_pixels_width_2
     - concentration_cog
     - concentration_core
     - concentration_pixel
@@ -98,17 +102,21 @@ disp:
   #array_event_column: array_event_id
 
   # randomly sample the data if you dont want to use the whole set
-  n_signal : 43000
+  n_signal : 50000
 
   features:
     - intensity
     - log_intensity
     - width
     - length
-    - leakage_intensity_width_1
-    - leakage_pixels_width_1
-    - leakage_intensity_width_2
-    - leakage_pixels_width_2
+    - leakage1_intensity
+    - leakage1_pixel
+    - leakage2_intensity
+    - leakage2_pixel
+    #- leakage_intensity_width_1
+    #- leakage_pixels_width_1
+    #- leakage_intensity_width_2
+    #- leakage_pixels_width_2
     - r
     - kurtosis
     - skewness
@@ -137,7 +145,7 @@ energy:
     )
 
   # randomly sample the data if you dont want to use the whole set
-  n_signal: 43000
+  n_signal: 50000
 
   # define the name of the regression target
   target_column: mc_energy
@@ -153,10 +161,14 @@ energy:
     - length
     - width
     - skewness
-    - leakage_intensity_width_1
-    - leakage_pixels_width_1
-    - leakage_intensity_width_2
-    - leakage_pixels_width_2
+    - leakage1_intensity
+    - leakage1_pixel
+    - leakage2_intensity
+    - leakage2_pixel
+    #- leakage_intensity_width_1
+    #- leakage_pixels_width_1
+    #- leakage_intensity_width_2
+    #- leakage_pixels_width_2
     - concentration_cog
     - concentration_core
     - concentration_pixel
