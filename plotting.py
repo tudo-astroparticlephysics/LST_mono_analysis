@@ -6,32 +6,12 @@ from astropy.coordinates import SkyCoord, AltAz, EarthLocation
 import astropy.units as u
 
 from fact.analysis.statistics import li_ma_significance
-from ctapipe.coordinates import CameraFrame, TelescopeFrame
+from ctapipe.coordinates import CameraFrame
 
 from astropy.coordinates.erfa_astrom import erfa_astrom, ErfaAstromInterpolator
 
 
 erfa_astrom.set(ErfaAstromInterpolator(10 * u.min))
-
-
-def to_camera_frame(df, source):
-    altaz = AltAz(
-        location = EarthLocation.of_site('Roque de los Muchachos'),
-        obstime = Time(df.dragon_time, format='unix')
-    )
-    telescope_pointing = SkyCoord(
-        alt = u.Quantity(df.alt_tel.to_numpy(), u.rad, copy=False),
-        az = u.Quantity(df.az_tel.to_numpy(), u.rad, copy=False),
-        frame = altaz
-    )
-    camera_frame = CameraFrame(
-        focal_length = u.Quantity(df.focal_length.to_numpy(), u.m, copy=False),
-        telescope_pointing = telescope_pointing,
-        location = EarthLocation.of_site('Roque de los Muchachos'),
-        obstime = Time(df.dragon_time, format='unix')
-    )
-    source_cf = source.transform_to(camera_frame)
-    return source_cf
 
 
 def calc_dist(x, y):
@@ -85,53 +65,27 @@ def theta2(theta2_on, theta2_off, scaling, cut, threshold, source, total_time=No
     return ax
 
 
-def angular_res(df, true_energy_column, ax=None, label=r'$68^{\mathrm{th}}$ Percentile'):
-
-    df = df.copy()
-    edges = 10**np.arange(
-        np.log10(df[true_energy_column].min()),
-        np.log10(df[true_energy_column].max()),
-        0.2     #cta convention: 5 bins per energy decade
-    )
-    df['bin_idx'] = np.digitize(df[true_energy_column], edges)
-
-    binned = pd.DataFrame({
-        'e_center': 0.5 * (edges[1:] + edges[:-1]),
-        'e_low': edges[:-1],
-        'e_high': edges[1:],
-        'e_width': np.diff(edges),
-    }, index=pd.Series(np.arange(1, len(edges)), name='bin_idx'))
-
-    df['diff'] = np.rad2deg(
-        np.sqrt((df.source_x_prediction - df.src_x)**2 + (df.source_y_prediction - df.src_y)**2)
-        / df.focal_length
-    )
-
-    def f(group):
-        group = group.sort_values('diff')
-        group = group.dropna(axis='index', subset=['diff'])
-        group68 = group.quantile(q=0.68)
-        return group68['diff']
-
-    grouped = df.groupby('bin_idx')
-    counts = grouped.size()
-    binned['ang_res'] = grouped.apply(f)
-    binned['counts'] = counts
-    binned = binned.query('counts > 50') # at least 50 events per bin
+def theta_astropy(df, source):
+    obstime = Time(df.dragon_time, format='unix')
+    location = EarthLocation.of_site('Roque de los Muchachos')
+    altaz = AltAz(obstime=obstime, location=location)
     
-    ax = ax or plt.gca()
-
-    ax.errorbar(
-        binned.e_center, binned.ang_res,
-        xerr=binned.e_width / 2,
-        ls='',
-        label=label
+    pointing = SkyCoord(
+        alt=u.Quantity(df.alt_tel.values, u.rad, copy=False),
+        az=u.Quantity(df.az_tel.values, u.rad, copy=False),
+        frame=altaz,
     )
-    ax.set_ylabel(r'$\theta_{68\%} \,\, / \,\, \mathrm{deg}$')
-    ax.set_xlabel(
-        r'$E_{\mathrm{true}} \,\,/\,\, \mathrm{TeV}$'
-    )
-    ax.set_xscale('log')
-    ax.legend()
+    
+    camera_frame = CameraFrame(telescope_pointing=pointing, location=location, obstime=obstime, focal_length=28 * u.m)
 
-    return ax
+    prediction_cam = SkyCoord(
+        x=u.Quantity(df.source_x_prediction.values, u.m, copy=False),
+        y=u.Quantity(df.source_y_prediction.values, u.m, copy=False),
+        frame=camera_frame,
+    )
+    
+    prediction_icrs = prediction_cam.transform_to('icrs')
+
+    theta = prediction_icrs.separation(source)
+    
+    return theta.dms
