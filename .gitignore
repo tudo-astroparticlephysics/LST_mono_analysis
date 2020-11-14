@@ -1,4 +1,7 @@
 data
+build
+observations
+simulations
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

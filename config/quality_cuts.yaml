@@ -7,6 +7,3 @@ selection:
   - intensity: [">", 150]
   - leakage_intensity_width_1: ["<", 0.2]
   - leakage_intensity_width_2: ["<", 0.2]
-
-# gamma-diffuse_training: 95096 events remain
-# proton_training: 54137 events remain
