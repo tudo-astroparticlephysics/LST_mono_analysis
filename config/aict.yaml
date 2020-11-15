@@ -10,17 +10,16 @@ n_cross_validations : 5
 separator:
   classifier : |
     ensemble.RandomForestClassifier(
-        n_estimators=100,
+        n_estimators=200,
         max_features='sqrt',
         n_jobs=-1,
-        max_depth=15,
+        max_depth=20,
         criterion='entropy',
-
     )
 
   # randomly sample the data if you dont want to use the whole set
-  n_background: 50000
-  n_signal: 50000
+  n_background: 250000
+  n_signal: 250000
 
   # Define the name of the output column for the positive class.
   # default is gamma_prediction
@@ -31,27 +30,14 @@ separator:
   # telescope_type_key: telescope:name
 
   features:
-    - intensity
     - log_intensity
-    - intercept
     - time_gradient
     - length
     - width
     - skewness
     - kurtosis
-    - n_islands
-    - n_pixels
-    - leakage1_intensity
-    - leakage1_pixel
-    - leakage2_intensity
-    - leakage2_pixel
-    #- leakage_intensity_width_1
-    #- leakage_pixels_width_1
-    #- leakage_intensity_width_2
-    #- leakage_pixels_width_2
     - concentration_cog
     - concentration_core
-    - concentration_pixel
 
   # Generate some features using pd.DataFrame.eval
   # List all columns that have to be read from the input files
@@ -70,15 +56,15 @@ separator:
 disp:
   disp_regressor : |
     ensemble.RandomForestRegressor(
-        n_estimators=100,
-        max_features='sqrt',
+        n_estimators=200,
+        max_features='auto',
         n_jobs=-1,
         max_depth=20,
     )
 
   sign_classifier: |
     ensemble.RandomForestClassifier(
-        n_estimators=100,
+        n_estimators=200,
         max_features='sqrt',
         n_jobs=-1,
         max_depth=20,
@@ -88,15 +74,15 @@ disp:
 
   source_az_column: mc_az
   source_az_unit: rad
-  source_alt_column: mc_alt 
+  source_alt_column: mc_alt
   source_alt_unit: rad
   pointing_az_column: az_tel
   pointing_az_unit: rad
   pointing_alt_column: alt_tel
   pointing_alt_unit: rad
 
-  cog_x_column: x  
-  cog_y_column: y  
+  cog_x_column: x
+  cog_y_column: y
   delta_column: psi
   delta_unit: rad
   focal_length_column: focal_length
@@ -104,29 +90,18 @@ disp:
   #array_event_column: array_event_id
 
   # randomly sample the data if you dont want to use the whole set
-  n_signal : 50000
+  n_signal : 200000
 
   features:
-    - intensity
     - log_intensity
     - width
     - length
-    - n_pixels
-    - leakage1_intensity
-    - leakage1_pixel
-    - leakage2_intensity
-    - leakage2_pixel
-    #- leakage_intensity_width_1
-    #- leakage_pixels_width_1
-    #- leakage_intensity_width_2
-    #- leakage_pixels_width_2
     - r
     - kurtosis
     - skewness
     - concentration_cog
     - concentration_core
     - time_gradient
-    - intercept
 
   feature_generation:
     needed_columns:
@@ -141,14 +116,14 @@ disp:
 energy:
   regressor : |
     ensemble.RandomForestRegressor(
-      n_estimators=100,
+      n_estimators=200,
       max_features='sqrt',
       n_jobs=-1,
-      max_depth=12,
+      max_depth=20,
     )
 
   # randomly sample the data if you dont want to use the whole set
-  n_signal: 50000
+  n_signal: 200000
 
   # define the name of the regression target
   target_column: mc_energy
@@ -159,24 +134,14 @@ energy:
   output_name: gamma_energy_prediction
 
   features:
-    - intensity
     - log_intensity
     - length
     - width
-    - n_islands
-    - n_pixels
     - skewness
-    - leakage1_intensity
-    - leakage1_pixel
-    - leakage2_intensity
-    - leakage2_pixel
-    #- leakage_intensity_width_1
-    #- leakage_pixels_width_1
-    #- leakage_intensity_width_2
-    #- leakage_pixels_width_2
+    - leakage_intensity_width_1
+    - leakage_intensity_width_2
     - concentration_cog
     - concentration_core
-    - concentration_pixel
 
   # Generate some features using pd.DataFrame.eval
   # List all keys that have to be read from the input files
