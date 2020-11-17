@@ -91,7 +91,7 @@ $(OUTDIR)/regressor.pkl $(OUTDIR)/cv_regressor.h5: $(CUTS_CONFIG) $(AICT_CONFIG)
 		$(OUTDIR)/regressor.pkl
 
 #apply models
-$(OUTDIR)/dl2_%.h5: $(OUTDIR)/dl1_%_aict.h5 $(OUTDIR)/separator.pkl $(OUTDIR)/disp.pkl $(OUTDIR)/regressor.pkl $(AICT_CONFIG) $(CUTS_CONFIG_DATA)
+$(OUTDIR)/dl2_%.h5: $(OUTDIR)/dl1_%_aict.h5 $(OUTDIR)/separator.pkl $(OUTDIR)/disp.pkl $(OUTDIR)/regressor.pkl $(AICT_CONFIG) $(CUTS_CONFIG_DATA) add_az_alt.py
 	aict_apply_cuts \
 		$(CUTS_CONFIG_DATA) \
 		$< $@ \
@@ -112,6 +112,8 @@ $(OUTDIR)/dl2_%.h5: $(OUTDIR)/dl1_%_aict.h5 $(OUTDIR)/separator.pkl $(OUTDIR)/di
 		$@ \
 		$(OUTDIR)/regressor.pkl \
 		--chunksize=100000
+	python add_az_alt.py \
+		$@
 
 #performance plots
 $(OUTDIR)/regressor_plots.pdf: $(AICT_CONFIG) $(OUTDIR)/cv_regressor.h5 | $(OUTDIR)
@@ -145,8 +147,8 @@ $(OUTDIR)/crab_theta2.pdf: theta2_wobble.py plotting.py $(OUTDIR)/dl2_v0.6.1_v05
 	python theta2_wobble.py \
 		$(OUTDIR)/crab_theta2.pdf \
 		'Crab' \
-		0.04 \
-		0.6 \
+		0.03 \
+		0.85 \
 		-d $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02766.h5 \
 		-d $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02767.h5 \
 		-d $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02768.h5 \
@@ -162,8 +164,8 @@ $(OUTDIR)/mrk421_theta2.pdf: theta2_wobble.py plotting.py $(OUTDIR)/dl2_v0.6.1_v
 	python theta2_wobble.py \
 		$(OUTDIR)/mrk421_theta2.pdf \
 		'Mrk 421' \
-		0.04 \
-		0.6 \
+		0.03 \
+		0.85 \
 		-d $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02113.h5 \
 		-d $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02114.h5 \
 		-d $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02115.h5 \
@@ -181,8 +183,8 @@ $(OUTDIR)/mrk501_theta2.pdf: theta2_wobble.py plotting.py $(OUTDIR)/dl2_v0.6.1_v
 	python theta2_wobble.py \
 		$(OUTDIR)/mrk501_theta2.pdf \
 		'Mrk 501' \
-		0.04 \
-		0.6 \
+		0.03 \
+		0.85 \
 		-d $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02606.h5 \
 		-d $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02607.h5 \
 		-d $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02608.h5 \

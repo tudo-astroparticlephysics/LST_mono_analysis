@@ -1,14 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
-from astropy.time import Time
-from astropy.coordinates import SkyCoord, AltAz, EarthLocation
+
+from astropy.coordinates import SkyCoord, SkyOffsetFrame
 import astropy.units as u
+from astropy.coordinates.erfa_astrom import erfa_astrom, ErfaAstromInterpolator
 
 from fact.analysis.statistics import li_ma_significance
-from ctapipe.coordinates import CameraFrame
-
-from astropy.coordinates.erfa_astrom import erfa_astrom, ErfaAstromInterpolator
 
 
 erfa_astrom.set(ErfaAstromInterpolator(10 * u.min))
@@ -26,13 +23,13 @@ def calc_theta2(dist, focal_length):
     return theta2
 
 
-def total_t(df):
+def ontime(df):
     delta = np.diff(df.dragon_time.sort_values())
     delta = delta[np.abs(delta) < 10]
-    return len(df) * delta.mean()
+    return len(df) * delta.mean() * u.s
 
 
-def theta2(theta2_on, theta2_off, scaling, cut, threshold, source, total_time=None, ax=None, window=[0,1]):
+def theta2(theta2_on, theta2_off, scaling, cut, threshold, source, ontime=None, ax=None, window=[0,1]):
 
     ax = ax or plt.gca()
 
@@ -45,18 +42,13 @@ def theta2(theta2_on, theta2_off, scaling, cut, threshold, source, total_time=No
     n_exc_mean = n_on - scaling * n_off
     n_exc_std = np.sqrt(n_on + scaling**2 * n_off)
 
-    text_pos = 0.9 * theta2_on[theta2_on < 0.01].size 
-    text = (
-        rf'Source: {source}, $t_\mathrm{{obs}} = {total_time:.2f} \mathrm{{h}}$' + '\n'
-        + rf'$N_\mathrm{{on}} = {n_on},\, N_\mathrm{{off}} = {n_off},\, \alpha = {scaling:.2f}$' + '\n' 
-        + rf'$N_\mathrm{{exc}} = {n_exc_mean:.0f} \pm {n_exc_std:.0f},\, S_\mathrm{{Li&Ma}} = {li_ma:.2f}$'
-    )
-    ax.text(0.3 * window[1], text_pos, text)
-    ax.axvline(x=cut, color='k', alpha=0.6, lw=1.5, ls=':')
-    ax.annotate(
-        rf'$\theta_\mathrm{{max}}^2 = {cut} \mathrm{{deg}}^2$' + '\n' + rf'$(\, t_\gamma = {threshold} \,)$', 
-        (cut + window[1]/100, 0.8 * text_pos)
-    )
+    txt = rf'''Source: {source}, $t_\mathrm{{obs}} = {ontime.to_value(u.hour):.2f} \mathrm{{h}}$
+    $\theta_\mathrm{{max}}^2 = {cut} \mathrm{{deg}}^2,\, t_\gamma = {threshold}$
+    $N_\mathrm{{on}} = {n_on},\, N_\mathrm{{off}} = {n_off},\, \alpha = {scaling:.2f}$
+    $N_\mathrm{{exc}} = {n_exc_mean:.0f} \pm {n_exc_std:.0f},\, S_\mathrm{{Li&Ma}} = {li_ma:.2f}$
+    '''
+    ax.text(0.5, 0.95, txt, transform=ax.transAxes, va='top', ha='center')
+    ax.axvline(cut, color='k', alpha=0.6, lw=1, ls='--')
 
     ax.set_xlabel(r'$\theta^2 \,\, / \,\, \mathrm{deg}^2$')
     ax.set_xlim(window)
@@ -65,27 +57,23 @@ def theta2(theta2_on, theta2_off, scaling, cut, threshold, source, total_time=No
     return ax
 
 
-def theta_astropy(df, source):
-    obstime = Time(df.dragon_time, format='unix')
-    location = EarthLocation.of_site('Roque de los Muchachos')
-    altaz = AltAz(obstime=obstime, location=location)
+def calc_theta_off(source_coord: SkyCoord, reco_coord: SkyCoord, pointing_coord: SkyCoord, n_off=5):
+    fov_frame = SkyOffsetFrame(origin=pointing_coord)
+    source_fov = source_coord.transform_to(fov_frame)
+    reco_fov = reco_coord.transform_to(fov_frame)
     
-    pointing = SkyCoord(
-        alt=u.Quantity(df.alt_tel.values, u.rad, copy=False),
-        az=u.Quantity(df.az_tel.values, u.rad, copy=False),
-        frame=altaz,
-    )
+    r = source_coord.separation(pointing_coord)
+    phi0 = np.arctan2(source_fov.lat, source_fov.lon).to_value(u.rad)
     
-    camera_frame = CameraFrame(telescope_pointing=pointing, location=location, obstime=obstime, focal_length=28 * u.m)
-
-    prediction_cam = SkyCoord(
-        x=u.Quantity(df.source_x_prediction.values, u.m, copy=False),
-        y=u.Quantity(df.source_y_prediction.values, u.m, copy=False),
-        frame=camera_frame,
-    )
-    
-    prediction_icrs = prediction_cam.transform_to('icrs')
-
-    theta = prediction_icrs.separation(source)
-    
-    return theta.dms
+    theta_offs = []
+    for off in range(1, n_off + 1):
+        
+        off_pos = SkyCoord(
+            lon=r * np.sin(phi0 + 2 * np.pi * off / (n_off + 1)),
+            lat=r * np.cos(phi0 + 2 * np.pi * off / (n_off + 1)),
+            frame=fov_frame,
+        )
+        
+        theta_offs.append(off_pos.separation(reco_fov))
+        
+    return reco_coord.separation(source_coord), np.concatenate(theta_offs)

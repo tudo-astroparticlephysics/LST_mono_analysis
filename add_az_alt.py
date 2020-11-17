@@ -12,8 +12,14 @@ from astropy.coordinates.erfa_astrom import erfa_astrom, ErfaAstromInterpolator
 
 erfa_astrom.set(ErfaAstromInterpolator(10 * u.min))
 location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)
-columns = [
+columns_obs = [
     'dragon_time',
+    'az_tel',
+    'alt_tel',
+    'source_x_prediction',
+    'source_y_prediction'
+]
+columns_sim = [
     'az_tel',
     'alt_tel',
     'source_x_prediction',
@@ -25,14 +31,14 @@ columns = [
 @click.argument('infile', type=click.Path(exists=True, dir_okay=False))
 def main(infile):
 
-    df = read_h5py(infile, key='events', columns=columns)
-
     with h5py.File(infile, mode='r') as f:
         is_simulation = 'corsika_runs' in f
 
     if is_simulation:
+        df = read_h5py(infile, key='events', columns=columns_sim)
         obstime = None
     else:
+        df = read_h5py(infile, key='events', columns=columns_obs)
         obstime = Time(df.dragon_time, format='unix')
     
     altaz = AltAz(obstime=obstime, location=location)
