@@ -21,6 +21,19 @@ from astropy.coordinates.erfa_astrom import erfa_astrom, ErfaAstromInterpolator
 erfa_astrom.set(ErfaAstromInterpolator(10 * u.min))
 
 
+columns = [
+        'source_x_prediction', 
+        'source_y_prediction', 
+        'source_ra_prediction',
+        'source_dec_prediction',
+        'dragon_time', 
+        'gammaness',
+        'focal_length',
+        'alt_tel',
+        'az_tel'
+    ]
+
+
 @click.command()
 @click.argument('output', type=click.Path(exists=False, dir_okay=False))
 @click.argument('source', type=str)
@@ -39,18 +52,6 @@ def main(output, source, theta2_cut, threshold, data, n_offs):
     if not data:
         exit('No data given!')
 
-    columns = [
-        'source_x_prediction', 
-        'source_y_prediction', 
-        'source_ra_prediction',
-        'source_dec_prediction',
-        'dragon_time', 
-        'gammaness',
-        'focal_length',
-        'alt_tel',
-        'az_tel'
-    ]
-
     df = pd.DataFrame()
     for i, run in enumerate(data):
         df = pd.concat( [
@@ -61,6 +62,11 @@ def main(output, source, theta2_cut, threshold, data, n_offs):
         )
 
     df_selected = df.query(f'gammaness > {threshold}')
+
+    ontime = plotting.ontime(df_selected).to(u.hour)
+
+    # theta/ distance to source/ off position in icrs 
+    src = SkyCoord.from_name(source)
 
     obstime = Time(df_selected.dragon_time, format='unix')
     location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)
@@ -74,23 +80,20 @@ def main(output, source, theta2_cut, threshold, data, n_offs):
     )
     pointing_icrs = pointing.transform_to('icrs')
 
-    src = SkyCoord.from_name(source)
     prediction_icrs = SkyCoord(
         df_selected.source_ra_prediction.values * u.rad, 
         df_selected.source_dec_prediction.values * u.rad, 
         frame='icrs'
     )
 
-    theta_Test, theta_off_Test = plotting.calc_theta_off(
+    theta, theta_off = plotting.calc_theta_off(
         source_coord=src,
         reco_coord=prediction_icrs,
         pointing_coord=pointing_icrs,
         n_off=n_offs,
     )
 
-    ontime = plotting.ontime(df_selected).to(u.hour)
-
-    # distance in camera frame
+    # theta/ distance to source/ off position in camera frame
     camera_frame = CameraFrame(telescope_pointing=pointing, location=location, obstime=obstime, focal_length=28 * u.m)
 
     src_cam = src.transform_to(camera_frame)
@@ -123,11 +126,11 @@ def main(output, source, theta2_cut, threshold, data, n_offs):
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
     plotting.theta2(
-        theta_Test.deg**2, theta_off_Test.deg**2, 1/n_offs, theta2_cut, 
+        theta.deg**2, theta_off.deg**2, 1/n_offs, theta2_cut, 
         threshold, source, ontime=ontime,
         ax=ax
     )
-    ax.set_title('New Code')
+    ax.set_title('Theta calculated in ICRS using astropy')
 
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
@@ -136,6 +139,7 @@ def main(output, source, theta2_cut, threshold, data, n_offs):
         threshold, source, ontime=ontime,
         ax=ax
     )
+    ax.set_title('Theta calculated in camera frame')
 
     # saving
     with PdfPages(output) as pdf:

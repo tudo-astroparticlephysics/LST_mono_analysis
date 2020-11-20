@@ -42,7 +42,8 @@ all: $(OUTDIR)/cv_separation.h5 \
 	$(MRK501_DL2) \
 	$(OUTDIR)/crab_theta2.pdf \
 	$(OUTDIR)/mrk421_theta2.pdf \
-	$(OUTDIR)/mrk501_theta2.pdf
+	$(OUTDIR)/mrk501_theta2.pdf \
+	$(OUTDIR)/pyirf.fits.gz
 
 #file convert
 $(OUTDIR)/%_aict.h5: $(OBSDIR)/%.h5 file_convert.py | $(OUTDIR)
@@ -191,6 +192,14 @@ $(OUTDIR)/mrk501_theta2.pdf: theta2_wobble.py plotting.py $(OUTDIR)/dl2_v0.6.1_v
 		-d $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02610.h5 \
 		-d $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02612.h5 \
 		-d $(OUTDIR)/dl2_v0.6.1_v05_LST-1.Run02613.h5
+
+#pyirf sensitivity 
+$(OUTDIR)/pyirf.fits.gz: pyirf_sensitivity.py $(OUTDIR)/dl2_$(GAMMA_FILE)_testing.h5 $(OUTDIR)/dl2_$(PROTON_FILE)_testing.h5 $(OUTDIR)/dl2_$(ELECTRON_FILE)_testing.h5 | $(OUTDIR)
+	python pyirf_sensitivity.py \
+		$(OUTDIR)/dl2_$(GAMMA_FILE)_testing.h5 \
+		$(OUTDIR)/dl2_$(PROTON_FILE)_testing.h5 \
+		$(OUTDIR)/dl2_$(ELECTRON_FILE)_testing.h5 \
+		$(OUTDIR)/pyirf.fits.gz
 
 
 $(OUTDIR):
