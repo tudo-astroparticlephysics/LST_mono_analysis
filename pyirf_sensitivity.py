@@ -63,8 +63,8 @@ COLUMN_MAP = {
 }
 
 UNIT_MAP = {
-    "true_energy": u.teraelectronvolt,
-    "reco_energy": u.teraelectronvolt,
+    "true_energy": u.TeV,
+    "reco_energy": u.TeV,
     "true_alt": u.rad,
     "true_az": u.rad,
     "reco_alt": u.rad,
@@ -148,16 +148,15 @@ def main(gammafile, protonfile, electronfile, outputfile):
         log.info("")
 
     gammas = particles["gamma"]["events"]
+    background = table.vstack(
+        [particles["proton"]["events"], particles["electron"]["events"]]
+    )
+
     # calculate theta / distance between reco and assuemd source position
     gammas["theta"] = calculate_theta(
         gammas,
         assumed_source_az=gammas["true_az"],
         assumed_source_alt=gammas["true_alt"],
-    )
-
-    # background table composed of both electrons and protons
-    background = table.vstack(
-        [particles["proton"]["events"], particles["electron"]["events"]]
     )
 
     INITIAL_GH_CUT = np.quantile(gammas['gh_score'], (1 - INITIAL_GH_CUT_EFFICENCY))
@@ -249,7 +248,6 @@ def main(gammafile, protonfile, electronfile, outputfile):
             s["relative_sensitivity"] * spectrum(s['reco_energy_center'])
         )
 
-    log.info('Calculating IRFs')
     hdus = [
         fits.PrimaryHDU(),
         fits.BinTableHDU(sensitivity, name="SENSITIVITY"),
@@ -259,6 +257,39 @@ def main(gammafile, protonfile, electronfile, outputfile):
         fits.BinTableHDU(gh_cuts, name="GH_CUTS"),
     ]
 
+
+    # calculate sensitivity using unoptimised cuts (temporary, just for comparison)
+    gammas["theta_unop"] = gammas["theta"].to_value(u.deg) <= np.sqrt(0.03)
+    gammas["gh_unop"] = gammas["gh_score"] > 0.85
+
+    theta_cut_unop = table.QTable()
+    theta_cut_unop['low'] = theta_cuts_opt['low']
+    theta_cut_unop['high'] = theta_cuts_opt['high']
+    theta_cut_unop['center'] = theta_cuts_opt['center']
+    theta_cut_unop['cut'] = np.sqrt(0.03) * u.deg
+
+    signal_hist_unop = create_histogram_table(
+        gammas[gammas["theta_unop"] & gammas["gh_unop"]], bins=sensitivity_bins
+    )
+    background_hist_unop = estimate_background(
+        background[background["gh_score"] > 0.85],
+        reco_energy_bins=sensitivity_bins,
+        theta_cuts=theta_cut_unop,
+        alpha=ALPHA,
+        background_radius=MAX_BG_RADIUS,
+    )
+    sensitivity_unop = calculate_sensitivity(
+        signal_hist_unop, background_hist_unop, alpha=ALPHA
+    )
+    sensitivity_unop["flux_sensitivity"] = (
+        sensitivity_unop["relative_sensitivity"] * spectrum(sensitivity_unop['reco_energy_center'])
+    )
+    hdus.append(
+        fits.BinTableHDU(sensitivity_unop, name="SENSITIVITY_UNOP")
+    )
+
+
+    log.info('Calculating IRFs')
     masks = {
         "": gammas["selected"],
         "_NO_CUTS": slice(None),
