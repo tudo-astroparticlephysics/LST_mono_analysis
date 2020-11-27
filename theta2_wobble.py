@@ -36,21 +36,15 @@ columns = [
 
 @click.command()
 @click.argument('output', type=click.Path(exists=False, dir_okay=False))
+@click.argument('data', nargs=-1, type=click.Path(exists=True, dir_okay=False))
 @click.argument('source', type=str)
 @click.argument('theta2_cut', type=float)
 @click.argument('threshold', type=float)
 @click.option(
-    '--data', '-d', multiple=True, type=click.Path(exists=True, dir_okay=True),
-    help='DL2 data to be analysed'
-)
-@click.option(
     '--n_offs', '-n', type=int, default=5,
     help='Number of OFF regions (default = 5)'
 )
-def main(output, source, theta2_cut, threshold, data, n_offs):
-    
-    if not data:
-        exit('No data given!')
+def main(output, data, source, theta2_cut, threshold, n_offs):
 
     df = pd.DataFrame()
     for i, run in enumerate(data):

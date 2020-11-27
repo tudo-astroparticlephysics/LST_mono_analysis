@@ -93,7 +93,7 @@ def read_file(infile):
 
     events.rename(columns=COLUMN_MAP, inplace=True)
     
-    n_showers = sum(sim_runs.num_showers)
+    n_showers = np.sum(sim_runs.num_showers * sim_runs.shower_reuse)
     log.debug(f"Number of events from corsika_runs: {n_showers}")
 
     sim_info = SimulatedEventsInfo(
@@ -164,12 +164,12 @@ def main(gammafile, protonfile, electronfile, outputfile):
 
     theta_bins = add_overflow_bins(
         create_bins_per_decade(
-            10 ** (-1.9) * u.TeV, 10 ** 2.31 * u.TeV, bins_per_decade=25
+            10 ** -1.8 * u.TeV, 10 ** 2.41 * u.TeV, bins_per_decade=25
         )
     )
     sensitivity_bins = add_overflow_bins(
         create_bins_per_decade(
-            10 ** -1.9 * u.TeV, 10 ** 2.31 * u.TeV, bins_per_decade=5
+            10 ** -1.8 * u.TeV, 10 ** 2.41 * u.TeV, bins_per_decade=5
         )
     )
 
@@ -300,12 +300,12 @@ def main(gammafile, protonfile, electronfile, outputfile):
     # binnings for the irfs
     true_energy_bins = add_overflow_bins(
         create_bins_per_decade(
-            10 ** -1.9 * u.TeV, 10 ** 2.31 * u.TeV, bins_per_decade=10
+            10 ** -1.8 * u.TeV, 10 ** 2.41 * u.TeV, bins_per_decade=10
         )
     )
     reco_energy_bins = add_overflow_bins(
         create_bins_per_decade(
-            10 ** -1.9 * u.TeV, 10 ** 2.31 * u.TeV, bins_per_decade=5
+            10 ** -1.8 * u.TeV, 10 ** 2.41 * u.TeV, bins_per_decade=5
         )
     )
     fov_offset_bins = [0, 0.5] * u.deg
