@@ -143,27 +143,30 @@ $(OUTDIR)/disp_plots.pdf: $(AICT_CONFIG) $(OUTDIR)/cv_disp.h5 $(OUTDIR)/dl1_$(GA
 		-o $@
 
 #observations
-$(OUTDIR)/crab_theta2.pdf: theta2_wobble.py plotting.py $(CRAB_DL2) | $(OUTDIR)
+$(OUTDIR)/crab_theta2.pdf: theta2_wobble.py plotting.py $(CRAB_DL2) $(OUTDIR)/pyirf.fits.gz | $(OUTDIR)
 	python theta2_wobble.py \
 		$(OUTDIR)/crab_theta2.pdf \
 		$(CRAB_DL2) \
 		'Crab' \
+		$(OUTDIR)/pyirf.fits.gz \
 		0.03 \
 		0.85
 
-$(OUTDIR)/mrk421_theta2.pdf: theta2_wobble.py plotting.py $(MRK421_DL2) | $(OUTDIR)
+$(OUTDIR)/mrk421_theta2.pdf: theta2_wobble.py plotting.py $(MRK421_DL2) $(OUTDIR)/pyirf.fits.gz | $(OUTDIR)
 	python theta2_wobble.py \
 		$(OUTDIR)/mrk421_theta2.pdf \
 		$(MRK421_DL2) \
 		'Mrk 421' \
+		$(OUTDIR)/pyirf.fits.gz \
 		0.03 \
 		0.85
 
-$(OUTDIR)/mrk501_theta2.pdf: theta2_wobble.py plotting.py $(MRK501_DL2) | $(OUTDIR)
+$(OUTDIR)/mrk501_theta2.pdf: theta2_wobble.py plotting.py $(MRK501_DL2) $(OUTDIR)/pyirf.fits.gz | $(OUTDIR)
 	python theta2_wobble.py \
 		$(OUTDIR)/mrk501_theta2.pdf \
 		$(MRK501_DL2) \
 		'Mrk 501' \
+		$(OUTDIR)/pyirf.fits.gz \
 		0.03 \
 		0.85
 

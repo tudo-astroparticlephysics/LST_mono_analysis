@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from astropy.coordinates import SkyCoord, SkyOffsetFrame
 import astropy.units as u
@@ -12,15 +13,11 @@ erfa_astrom.set(ErfaAstromInterpolator(10 * u.min))
 
 
 def calc_dist(x, y):
-    dist = x**2 + y**2
-    return dist
+    return np.sqrt(x**2 + y**2)
 
 
 def calc_theta2(dist, focal_length):
-    theta2 = np.rad2deg(
-        np.sqrt(dist) / focal_length
-    )**2
-    return theta2
+    return np.rad2deg(dist / focal_length)**2
 
 
 def ontime(df):
@@ -57,7 +54,7 @@ def theta2(theta2_on, theta2_off, scaling, cut, threshold, source, ontime=None, 
     return ax
 
 
-def calc_theta_off(source_coord: SkyCoord, reco_coord: SkyCoord, pointing_coord: SkyCoord, n_off=5):
+def calc_theta_off(source_coord: SkyCoord, reco_coord: SkyCoord, pointing_coord: SkyCoord, theta_save=None, n_off=5):
     fov_frame = SkyOffsetFrame(origin=pointing_coord)
     source_fov = source_coord.transform_to(fov_frame)
     reco_fov = reco_coord.transform_to(fov_frame)
@@ -75,5 +72,10 @@ def calc_theta_off(source_coord: SkyCoord, reco_coord: SkyCoord, pointing_coord:
         )
         
         theta_offs.append(off_pos.separation(reco_fov))
+        if theta_save is not None:
+            theta_save[f'astropy_off_{off}'] = off_pos.separation(reco_fov)
+
+    if theta_save is not None:
+        theta_save['astropy_on'] = reco_coord.separation(source_coord)
         
     return reco_coord.separation(source_coord), np.concatenate(theta_offs)
