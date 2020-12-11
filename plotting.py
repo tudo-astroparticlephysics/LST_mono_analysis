@@ -66,8 +66,8 @@ def calc_theta_off(source_coord: SkyCoord, reco_coord: SkyCoord, pointing_coord:
     for off in range(1, n_off + 1):
         
         off_pos = SkyCoord(
-            lon=r * np.sin(phi0 + 2 * np.pi * off / (n_off + 1)),
-            lat=r * np.cos(phi0 + 2 * np.pi * off / (n_off + 1)),
+            lon=r * np.cos(phi0 + 2 * np.pi * off / (n_off + 1)),
+            lat=r * np.sin(phi0 + 2 * np.pi * off / (n_off + 1)),
             frame=fov_frame,
         )
         
