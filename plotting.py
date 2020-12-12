@@ -4,9 +4,13 @@ import pandas as pd
 
 from astropy.coordinates import SkyCoord, SkyOffsetFrame
 import astropy.units as u
-from astropy.coordinates.erfa_astrom import erfa_astrom, ErfaAstromInterpolator
+from astropy import table
+
+from pyirf.utils import calculate_source_fov_offset
 
 from fact.analysis.statistics import li_ma_significance
+
+from astropy.coordinates.erfa_astrom import erfa_astrom, ErfaAstromInterpolator
 
 
 erfa_astrom.set(ErfaAstromInterpolator(10 * u.min))
@@ -50,7 +54,6 @@ def theta2(theta2_on, theta2_off, scaling, cut, threshold, source, ontime=None, 
     ax.set_xlabel(r'$\theta^2 \,\, / \,\, \mathrm{deg}^2$')
     ax.set_xlim(window)
     ax.legend()
-    ax.figure.tight_layout()
     return ax
 
 
@@ -79,3 +82,45 @@ def calc_theta_off(source_coord: SkyCoord, reco_coord: SkyCoord, pointing_coord:
         theta_save['astropy_on'] = reco_coord.separation(source_coord)
         
     return reco_coord.separation(source_coord), np.concatenate(theta_offs)
+
+
+def to_astropy_table(df, column_map, unit_map, theta, t_obs):
+    df_renamed = df.rename(columns=column_map)
+    tab = table.QTable.from_pandas(df_renamed, units=unit_map)
+
+    tab['reco_source_fov_offset'] = calculate_source_fov_offset(tab, prefix='reco')
+    tab['weight'] = 50 / t_obs.value
+    tab['theta'] = theta
+    return tab
+
+
+def plot_sensitivity(sensitivity, label=None, ax=None, magic=False):
+
+    ax = ax or plt.gca()
+
+    unit = u.Unit('erg cm-2 s-1')
+
+    if magic:
+        e = .5 * (sensitivity['e_max'].to(u.TeV) + sensitivity['e_min'].to(u.TeV))
+        w = (sensitivity['e_max'].to(u.TeV) - sensitivity['e_min'].to(u.TeV))
+        s = (e**2 * sensitivity['sensitivity_lima_5off'])
+    else:
+        e = sensitivity['reco_energy_center']
+        w = (sensitivity['reco_energy_high'] - sensitivity['reco_energy_low'])
+        s = (e**2 * sensitivity['flux_sensitivity'])
+
+    ax.errorbar(
+        e.to_value(u.TeV),
+        s.to_value(unit),
+        xerr=w.to_value(u.TeV) / 2,
+        ls='',
+        label=label
+    )
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("Reconstructed energy / TeV")
+    ax.set_ylabel(rf"$(E^2 \cdot \mathrm{{Flux Sensitivity}}) /$ ({unit.to_string('latex')})")
+    
+    ax.grid(which='both')
+    ax.legend()
+    return ax

@@ -79,7 +79,7 @@ ALPHA = 0.2
 
 # Radius to use for calculating bg rate
 MAX_BG_RADIUS = 1 * u.deg
-MAX_GH_CUT_EFFICIENCY = 0.8
+MAX_GH_CUT_EFFICIENCY = 1
 GH_CUT_EFFICIENCY_STEP = 0.01
 
 # gh cut used for first calculation of the binned theta cuts

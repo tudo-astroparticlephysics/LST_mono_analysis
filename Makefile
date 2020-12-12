@@ -43,8 +43,8 @@ all: $(OUTDIR)/cv_separation.h5 \
 	$(CRAB_DL2) \
 	$(OUTDIR)/crab_theta2.pdf \
 #	$(MRK421_DL2) \
-	$(MRK501_DL2) \
 	$(OUTDIR)/mrk421_theta2.pdf \
+	$(MRK501_DL2) \
 	$(OUTDIR)/mrk501_theta2.pdf
 	
 #file convert
