@@ -2,20 +2,20 @@ import click
 import operator
 
 import plotting
+import calculation
+
+from multiprocessing import Pool, cpu_count
 
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from fact.io import read_h5py
-from fact.io import to_h5py
 
 import astropy.units as u
 from astropy import table
 from astropy.io import fits
 
-from astropy.time import Time
-from astropy.coordinates import SkyCoord, AltAz, EarthLocation
-from ctapipe.coordinates import CameraFrame
+from astropy.coordinates import SkyCoord
 
 from fact.analysis.statistics import li_ma_significance
 
@@ -33,11 +33,6 @@ if matplotlib.get_backend() == 'pgf':
     from matplotlib.backends.backend_pgf import PdfPages
 else:
     from matplotlib.backends.backend_pdf import PdfPages
-
-from astropy.coordinates.erfa_astrom import erfa_astrom, ErfaAstromInterpolator
-
-
-erfa_astrom.set(ErfaAstromInterpolator(10 * u.min))
 
 
 columns = [
@@ -87,137 +82,56 @@ MAX_BG_RADIUS = 1 * u.deg
 @click.argument('theta2_cut', type=float)
 @click.argument('threshold', type=float)
 @click.option(
-    '--n_offs', '-n', type=int, default=5,
+    '--n_offs', type=int, default=5,
     help='Number of OFF regions (default = 5)'
 )
-def main(output, data, source, cuts_file, theta2_cut, threshold, n_offs):
+@click.option(
+    '--n_jobs', type=int, default=-1,
+    help='Number of processors used (default = -1)'
+)
+def main(output, data, source, cuts_file, theta2_cut, threshold, n_offs, n_jobs):
 
-    df = pd.DataFrame()
-    for i, run in enumerate(data):
-        df = pd.concat( [
-                df,
-                read_h5py(run, key = 'events', columns=columns)
-            ],
-            ignore_index=True
-        )
-
-    ontime = plotting.ontime(df).to(u.hour)
     src = SkyCoord.from_name(source)
-    location = EarthLocation.from_geodetic(-17.89139 * u.deg, 28.76139 * u.deg, 2184 * u.m)
 
-    df_selected = df.query(f'gammaness > {threshold}')
-    #df_selected = df_selected.query('gamma_energy_prediction >= 0.15') # e_reco > 150GeV cut
+    if n_jobs == -1:
+        n_jobs = cpu_count()
 
-    # theta to source/ off position in icrs
-    obstime = Time(df_selected.dragon_time, format='unix')
-
-    altaz = AltAz(obstime=obstime, location=location)
-
-    pointing = SkyCoord(
-        alt=u.Quantity(df_selected.alt_tel.values, u.rad, copy=False),
-        az=u.Quantity(df_selected.az_tel.values, u.rad, copy=False),
-        frame=altaz,
-    )
-    pointing_icrs = pointing.transform_to('icrs')
-
-    prediction_icrs = SkyCoord(
-        df_selected.source_ra_prediction.values * u.rad, 
-        df_selected.source_dec_prediction.values * u.rad, 
-        frame='icrs'
-    )
-
-    df_thetas = pd.DataFrame() # save thetas
-
-    theta, theta_off = plotting.calc_theta_off(
-        source_coord=src,
-        reco_coord=prediction_icrs,
-        pointing_coord=pointing_icrs,
-        theta_save=df_thetas,
-        n_off=n_offs,
-    )
-    
-
-    # theta to source/ off position in camera frame
-    camera_frame = CameraFrame(telescope_pointing=pointing, location=location, obstime=obstime, focal_length=28 * u.m)
-
-    src_cam = src.transform_to(camera_frame)
-
-    dist_on = plotting.calc_dist(
-        df_selected.source_x_prediction - src_cam.x.to_value(u.m), 
-        df_selected.source_y_prediction - src_cam.y.to_value(u.m)
-    )
-    theta2_on = plotting.calc_theta2(dist_on, df_selected.focal_length)
-
-    df_thetas['camera_frame_on'] = u.Quantity(np.sqrt(theta2_on), u.deg)
-
-    r = np.sqrt(src_cam.x.to_value(u.m)**2 + src_cam.y.to_value(u.m)**2)
-    phi = np.arctan2(src_cam.y.to_value(u.m), src_cam.x.to_value(u.m))
-
-    theta2_off = pd.Series(dtype = 'float64')
-    for i in range(1, n_offs + 1):
-        x_off = r * np.cos(phi + i * 2 * np.pi / (n_offs + 1)) 
-        y_off = r * np.sin(phi + i * 2 * np.pi / (n_offs + 1))
-        dist_off = plotting.calc_dist(
-            df_selected.source_x_prediction - x_off,
-            df_selected.source_y_prediction - y_off
-        )
-        theta2_off = theta2_off.append(
-            plotting.calc_theta2(dist_off, df_selected.focal_length)
-        )
-        df_thetas[f'camera_frame_off_{i}'] = u.Quantity(
-            np.sqrt(plotting.calc_theta2(dist_off, df_selected.focal_length)),
-            u.deg
+    with Pool(n_jobs) as pool:
+        results = np.array(
+            pool.starmap(
+                calculation.read_run_calculate_thetas, 
+                [(run, columns, threshold, src, n_offs) for run in data]
+            ), dtype=object
         )
 
-    to_h5py(df_thetas, 'build/theta_comparison.h5', key='thetas_compare', mode = 'w') # save thetas 
+    df_selected = pd.concat(results[:,0], ignore_index=True)
+    ontime = np.sum(results[:,1])
+    theta = np.concatenate(results[:,2])
+    df_selected5 = pd.concat(results[:,3], ignore_index=True)
+    theta_off = np.concatenate(results[:,4])
 
-
-    ##############################################################################################################
     # use pyirf cuts
-    ##############################################################################################################
     gh_cuts = table.QTable.read(cuts_file, hdu='GH_CUTS')
     theta_cuts_opt = table.QTable.read(cuts_file, hdu='THETA_CUTS_OPT')
     
-    df['selected_gh'] = evaluate_binned_cut(
-        df.gammaness.to_numpy(), df.gamma_energy_prediction.to_numpy() * u.TeV, gh_cuts, operator.ge
-    )
-    df_pyirf = df.query('selected_gh')
-    #df_pyirf = df_pyirf.query('gamma_energy_prediction >= 0.15') # e_reco > 150GeV cut
+    with Pool(n_jobs) as pool:
+        results = np.array(
+            pool.starmap(
+                calculation.read_run_calculate_thetas, 
+                [(run, columns, gh_cuts, src, n_offs) for run in data]
+            ), dtype=object
+        )
 
-    obstime = Time(df_pyirf.dragon_time, format='unix')
-
-    altaz = AltAz(obstime=obstime, location=location)
-
-    pointing = SkyCoord(
-        alt=u.Quantity(df_pyirf.alt_tel.values, u.rad, copy=False),
-        az=u.Quantity(df_pyirf.az_tel.values, u.rad, copy=False),
-        frame=altaz,
-    )
-    pointing_icrs = pointing.transform_to('icrs')
-
-    prediction_icrs = SkyCoord(
-        df_pyirf.source_ra_prediction.values * u.rad, 
-        df_pyirf.source_dec_prediction.values * u.rad, 
-        frame='icrs'
-    )
-
-    theta_pyirf, theta_off_pyirf = plotting.calc_theta_off(
-        source_coord=src,
-        reco_coord=prediction_icrs,
-        pointing_coord=pointing_icrs,
-        n_off=n_offs,
-    )
+    df_pyirf = pd.concat(results[:,0], ignore_index=True)
+    theta_pyirf = np.concatenate(results[:,2])
+    df_pyirf5 = pd.concat(results[:,3], ignore_index=True)
+    theta_off_pyirf = np.concatenate(results[:,4])
 
     n_on = np.count_nonzero(
         evaluate_binned_cut(
             theta_pyirf, df_pyirf.gamma_energy_prediction.to_numpy() * u.TeV, theta_cuts_opt, operator.le
         )
     )
-    # generate df containing corresponding energies etc for theta_off_pyirf
-    df_pyirf5 = df_pyirf
-    for i in range(n_offs-1):
-        df_pyirf5 = df_pyirf5.append(df_pyirf)
-    
     n_off = np.count_nonzero(
         evaluate_binned_cut(
             theta_off_pyirf, df_pyirf5.gamma_energy_prediction.to_numpy() * u.TeV, theta_cuts_opt, operator.le
@@ -243,17 +157,6 @@ def main(output, data, source, cuts_file, theta2_cut, threshold, n_offs):
         ax=ax
     )
     ax.set_title('Theta calculated in ICRS using astropy')
-
-    figures.append(plt.figure())
-    ax = figures[-1].add_subplot(1, 1, 1)
-    plotting.theta2(
-        theta2_on, 
-        theta2_off, 
-        1/n_offs, theta2_cut, threshold, 
-        source, ontime=ontime,
-        ax=ax
-    )
-    ax.set_title('Theta calculated in camera frame')
 
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
@@ -300,13 +203,13 @@ def main(output, data, source, cuts_file, theta2_cut, threshold, n_offs):
             10 ** -1.8 * u.TeV, 10 ** 2.41 * u.TeV, bins_per_decade=5
         )
     )
-    # gh_cuts and theta_cuts_opt in line 185f
+    # gh_cuts and theta_cuts_opt in line 119f
 
     gammas = plotting.to_astropy_table(
         df_pyirf, # df_pyirf has pyirf gh cuts already applied
         column_map=COLUMN_MAP,
         unit_map=UNIT_MAP,
-        theta=theta_pyirf, # use astropy theta
+        theta=theta_pyirf,
         t_obs=ontime
     )
     background = plotting.to_astropy_table(
@@ -344,21 +247,16 @@ def main(output, data, source, cuts_file, theta2_cut, threshold, n_offs):
         sensitivity["relative_sensitivity"] * spectrum(sensitivity['reco_energy_center'])
     )
 
-
-    # use unoptimised cuts
+    ##############################################################################################################
+    # sensitivity using unoptimised cuts
+    ##############################################################################################################
     gammas_unop = plotting.to_astropy_table(
         df_selected, # df_selected has gammaness > threshold already applied
         column_map=COLUMN_MAP,
         unit_map=UNIT_MAP,
-        theta=theta, # use astropy theta
+        theta=theta,
         t_obs=ontime
     )
-
-    # generate df containing corresponding energies etc for theta_off
-    df_selected5 = df_selected
-    for i in range(n_offs-1):
-        df_selected5 = df_selected5.append(df_selected)
-    
     background_unop = plotting.to_astropy_table(
         df_selected5,
         column_map=COLUMN_MAP,
@@ -399,7 +297,7 @@ def main(output, data, source, cuts_file, theta2_cut, threshold, n_offs):
         fits.BinTableHDU(sensitivity, name="SENSITIVITY"),
         fits.BinTableHDU(sensitivity_unop, name="SENSITIVITY_UNOP")
     ]
-    fits.HDUList(hdus).writeto('build/sensitivity_crab.fits.gz', overwrite=True)
+    fits.HDUList(hdus).writeto(f'build/sensitivity_{source}.fits.gz', overwrite=True)
 
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
@@ -415,7 +313,7 @@ def main(output, data, source, cuts_file, theta2_cut, threshold, n_offs):
     ax.set_title(f'Minimal Flux Satisfying Requirements for 50 hours \n(based on {ontime.to_value(u.hour):.2f}h of {source} observations)')
 
 
-    # saving plots
+    # save plots
     with PdfPages(output) as pdf:
         for fig in figures:
             fig.tight_layout()

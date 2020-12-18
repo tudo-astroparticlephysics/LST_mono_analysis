@@ -2,32 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from astropy.coordinates import SkyCoord, SkyOffsetFrame
 import astropy.units as u
 from astropy import table
 
 from pyirf.utils import calculate_source_fov_offset
 
 from fact.analysis.statistics import li_ma_significance
-
-from astropy.coordinates.erfa_astrom import erfa_astrom, ErfaAstromInterpolator
-
-
-erfa_astrom.set(ErfaAstromInterpolator(10 * u.min))
-
-
-def calc_dist(x, y):
-    return np.sqrt(x**2 + y**2)
-
-
-def calc_theta2(dist, focal_length):
-    return np.rad2deg(dist / focal_length)**2
-
-
-def ontime(df):
-    delta = np.diff(df.dragon_time.sort_values())
-    delta = delta[np.abs(delta) < 10]
-    return len(df) * delta.mean() * u.s
 
 
 def theta2(theta2_on, theta2_off, scaling, cut, threshold, source, ontime=None, ax=None, window=[0,1]):
@@ -55,33 +35,6 @@ def theta2(theta2_on, theta2_off, scaling, cut, threshold, source, ontime=None, 
     ax.set_xlim(window)
     ax.legend()
     return ax
-
-
-def calc_theta_off(source_coord: SkyCoord, reco_coord: SkyCoord, pointing_coord: SkyCoord, theta_save=None, n_off=5):
-    fov_frame = SkyOffsetFrame(origin=pointing_coord)
-    source_fov = source_coord.transform_to(fov_frame)
-    reco_fov = reco_coord.transform_to(fov_frame)
-    
-    r = source_coord.separation(pointing_coord)
-    phi0 = np.arctan2(source_fov.lat, source_fov.lon).to_value(u.rad)
-    
-    theta_offs = []
-    for off in range(1, n_off + 1):
-        
-        off_pos = SkyCoord(
-            lon=r * np.cos(phi0 + 2 * np.pi * off / (n_off + 1)),
-            lat=r * np.sin(phi0 + 2 * np.pi * off / (n_off + 1)),
-            frame=fov_frame,
-        )
-        
-        theta_offs.append(off_pos.separation(reco_fov))
-        if theta_save is not None:
-            theta_save[f'astropy_off_{off}'] = off_pos.separation(reco_fov)
-
-    if theta_save is not None:
-        theta_save['astropy_on'] = reco_coord.separation(source_coord)
-        
-    return reco_coord.separation(source_coord), np.concatenate(theta_offs)
 
 
 def to_astropy_table(df, column_map, unit_map, theta, t_obs):
