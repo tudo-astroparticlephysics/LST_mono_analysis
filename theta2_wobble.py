@@ -38,8 +38,6 @@ else:
 columns = [
     'obs_id',
     'event_id',
-    'source_x_prediction', 
-    'source_y_prediction',
     'source_az_prediction',
     'source_alt_prediction',
     'source_ra_prediction',
@@ -90,6 +88,7 @@ MAX_BG_RADIUS = 1 * u.deg
     help='Number of processors used (default = -1)'
 )
 def main(output, data, source, cuts_file, theta2_cut, threshold, n_offs, n_jobs):
+    outdir = output.split('/')[0]
 
     src = SkyCoord.from_name(source)
 
@@ -297,13 +296,13 @@ def main(output, data, source, cuts_file, theta2_cut, threshold, n_offs, n_jobs)
         fits.BinTableHDU(sensitivity, name="SENSITIVITY"),
         fits.BinTableHDU(sensitivity_unop, name="SENSITIVITY_UNOP")
     ]
-    fits.HDUList(hdus).writeto(f'build/sensitivity_{source}.fits.gz', overwrite=True)
+    fits.HDUList(hdus).writeto(f'{outdir}/sensitivity_{source}.fits.gz', overwrite=True)
 
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
     for s, label in zip(
         [sensitivity, sensitivity_unop], 
-        ['pyirf optimised cuts', r'$\theta^2 < 0.03$ and gh_score$> 0.85$']
+        ['pyirf optimised cuts', rf'$\theta^2 < {theta2_cut}$ and gh_score$> {threshold}$']
     ): plotting.plot_sensitivity(s, label=label, ax=ax)
 
     # plot Magic sensitivity for reference

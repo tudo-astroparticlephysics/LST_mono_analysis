@@ -64,9 +64,12 @@ def main(infile):
 
     if not is_simulation:
         prediction_icrs = prediction_altaz.transform_to('icrs')
+        pointing_icrs = pointing.transform_to('icrs')
         
         append_column_to_hdf5(infile, prediction_icrs.ra.rad, 'events', 'source_ra_prediction')
         append_column_to_hdf5(infile, prediction_icrs.dec.rad, 'events', 'source_dec_prediction')
+        append_column_to_hdf5(infile, pointing_icrs.ra.rad, 'events', 'pointing_ra')
+        append_column_to_hdf5(infile, pointing_icrs.dec.rad, 'events', 'pointing_dec')
 
 
 
