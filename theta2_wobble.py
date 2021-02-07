@@ -44,12 +44,10 @@ columns = [
     'source_dec_prediction',
     'dragon_time', 
     'gammaness',
-    'focal_length',
     'alt_tel',
     'az_tel',
     'gamma_energy_prediction'
 ]
-
 COLUMN_MAP = {
     'obs_id': 'obs_id',
     'event_id': 'event_id',
@@ -60,7 +58,6 @@ COLUMN_MAP = {
     'az_tel': 'pointing_az',
     'gammaness': 'gh_score',
 }
-
 UNIT_MAP = {
     'reco_energy': u.TeV,
     'reco_alt': u.rad,
@@ -68,7 +65,6 @@ UNIT_MAP = {
     'pointing_alt': u.rad,
     'pointing_az': u.rad
 }
-
 MAX_BG_RADIUS = 1 * u.deg
 
 
@@ -202,7 +198,7 @@ def main(output, data, source, cuts_file, theta2_cut, threshold, n_offs, n_jobs)
             10 ** -1.8 * u.TeV, 10 ** 2.41 * u.TeV, bins_per_decade=5
         )
     )
-    # gh_cuts and theta_cuts_opt in line 119f
+    # gh_cuts and theta_cuts_opt in line 113f
 
     gammas = plotting.to_astropy_table(
         df_pyirf, # df_pyirf has pyirf gh cuts already applied

@@ -258,7 +258,7 @@ def main(gammafile, protonfile, electronfile, outputfile):
     ]
 
 
-    # calculate sensitivity using unoptimised cuts (temporary, just for comparison)
+    # calculate sensitivity using unoptimised cuts
     gammas["theta_unop"] = gammas["theta"].to_value(u.deg) <= np.sqrt(0.03)
     gammas["gh_unop"] = gammas["gh_score"] > 0.85
 
