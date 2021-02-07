@@ -94,7 +94,7 @@ $(OUTDIR)/regressor.pkl $(OUTDIR)/cv_regressor.h5: $(CUTS_CONFIG) $(AICT_CONFIG)
 		$(OUTDIR)/regressor.pkl
 
 #apply models
-$(OUTDIR)/dl2_%.h5: $(OUTDIR)/dl1_%_aict.h5 $(OUTDIR)/separator.pkl $(OUTDIR)/disp.pkl $(OUTDIR)/regressor.pkl $(AICT_CONFIG) $(CUTS_CONFIG_DATA) add_az_alt.py
+$(OUTDIR)/dl2_%.h5: $(OUTDIR)/dl1_%_aict.h5 $(OUTDIR)/separator.pkl $(OUTDIR)/disp.pkl $(OUTDIR)/regressor.pkl $(AICT_CONFIG) $(CUTS_CONFIG_DATA) add_coords.py
 	aict_apply_cuts \
 		$(CUTS_CONFIG_DATA) \
 		$< $@ \
@@ -115,7 +115,7 @@ $(OUTDIR)/dl2_%.h5: $(OUTDIR)/dl1_%_aict.h5 $(OUTDIR)/separator.pkl $(OUTDIR)/di
 		$@ \
 		$(OUTDIR)/regressor.pkl \
 		--chunksize=100000
-	python add_az_alt.py \
+	python add_coords.py \
 		$@
 
 #performance plots
