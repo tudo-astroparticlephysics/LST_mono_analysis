@@ -40,6 +40,7 @@ all: $(OUTDIR)/cv_separation.h5 \
 	$(OUTDIR)/dl2_$(PROTON_FILE)_testing.h5 \
 	$(OUTDIR)/dl2_$(ELECTRON_FILE)_testing.h5 \
 	$(OUTDIR)/pyirf.fits.gz \
+	$(OUTDIR)/obs-index.fits.gz \
 	$(CRAB_DL2) \
 	$(OUTDIR)/crab_theta2.pdf \
 #	$(MRK421_DL2) \
@@ -170,12 +171,20 @@ $(OUTDIR)/mrk501_theta2.pdf: theta2_wobble.py plotting.py calculation.py $(MRK50
 		0.03 \
 		0.85
 
-#pyirf sensitivity 
+#pyirf sensitivity and irfs
 $(OUTDIR)/pyirf.fits.gz: pyirf_sensitivity.py $(OUTDIR)/dl2_$(GAMMA_FILE)_testing.h5 $(OUTDIR)/dl2_$(PROTON_FILE)_testing.h5 $(OUTDIR)/dl2_$(ELECTRON_FILE)_testing.h5 | $(OUTDIR)
 	python pyirf_sensitivity.py \
 		$(OUTDIR)/dl2_$(GAMMA_FILE)_testing.h5 \
 		$(OUTDIR)/dl2_$(PROTON_FILE)_testing.h5 \
 		$(OUTDIR)/dl2_$(ELECTRON_FILE)_testing.h5 \
+		$(OUTDIR)/pyirf.fits.gz
+
+#GADF DL3 files
+$(OUTDIR)/obs-index.fits.gz $(OUTDIR)/hdu-index.fits.gz: to_dl3.py calculation.py $(CRAB_DL2) $(OUTDIR)/pyirf.fits.gz | $(OUTDIR)
+	python to_dl3.py \
+		$(OUTDIR) \
+		$(CRAB_DL2) \
+		'Crab' \
 		$(OUTDIR)/pyirf.fits.gz
 
 
